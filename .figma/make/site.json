@@ -1,0 +1,12 @@
+{
+  "title": "Mangesha'z Salon | Beauty Parlour in Pimple Saudagar, Pune",
+  "description": "Explore beauty salon services at Mangesha'z Salon, Shivar Chowk, Pimple Saudagar, Pune. Enquire about hair styling, skincare, makeup, and appointments on WhatsApp.",
+  "language": "en",
+  "robots": {
+    "index": true
+  },
+  "accessibility": {
+    "addBypassLinks": true,
+    "ignoreReducedMotion": false
+  }
+}
