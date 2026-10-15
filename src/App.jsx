@@ -158,6 +158,18 @@ function Navbar() {
     return () => window.removeEventListener("resize", close)
   }, [])
 
+  // Auto-close mobile menu when user clicks outside
+  useEffect(() => {
+    if (!open) return
+    const handleClickOutside = (e) => {
+      if (!e.target.closest(".navbar")) {
+        setOpen(false)
+      }
+    }
+    document.addEventListener("click", handleClickOutside)
+    return () => document.removeEventListener("click", handleClickOutside)
+  }, [open])
+
   // Active section scrollspy observer
 
   useEffect(() => {
