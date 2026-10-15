@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 
 import {
   ArrowRight,
@@ -147,140 +147,272 @@ function SectionHeading({ eyebrow, title, text, align = "center" }) {
 
 function Navbar() {
   const [open, setOpen] = useState(false)
-
   const [activeSection, setActiveSection] = useState("home")
+  const toggleButtonRef = useRef(null)
+  const menuRef = useRef(null)
 
+  // Reset mobile menu to closed state when viewport scales to desktop (>= 1024px)
   useEffect(() => {
-    const close = () => setOpen(false)
-
-    window.addEventListener("resize", close)
-
-    return () => window.removeEventListener("resize", close)
-  }, [])
-
-  // Auto-close mobile menu when user clicks outside
-  useEffect(() => {
-    if (!open) return
-    const handleClickOutside = (e) => {
-      if (!e.target.closest(".navbar")) {
+    const handleResize = () => {
+      if (window.innerWidth >= 1024) {
         setOpen(false)
       }
     }
-    document.addEventListener("click", handleClickOutside)
-    return () => document.removeEventListener("click", handleClickOutside)
+    window.addEventListener("resize", handleResize)
+    return () => window.removeEventListener("resize", handleResize)
+  }, [])
+
+  // Lock background scroll when mobile navigation menu is open
+  useEffect(() => {
+    if (open) {
+      const originalOverflow = document.body.style.overflow
+      const originalPaddingRight = document.body.style.paddingRight
+      const scrollbarWidth =
+        window.innerWidth - document.documentElement.clientWidth
+
+      document.body.style.overflow = "hidden"
+      if (scrollbarWidth > 0) {
+        document.body.style.paddingRight = `${scrollbarWidth}px`
+      }
+
+      return () => {
+        document.body.style.overflow = originalOverflow
+        document.body.style.paddingRight = originalPaddingRight
+      }
+    }
+  }, [open])
+
+  // Close on Escape key and return focus to hamburger toggle button
+  useEffect(() => {
+    if (!open) return
+
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        e.preventDefault()
+        setOpen(false)
+        toggleButtonRef.current?.focus()
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown)
+    return () => window.removeEventListener("keydown", handleKeyDown)
+  }, [open])
+
+  // Accessible keyboard focus trap inside open mobile menu
+  useEffect(() => {
+    if (!open) return
+    const menuEl = menuRef.current
+    const toggleBtn = toggleButtonRef.current
+    if (!menuEl || !toggleBtn) return
+
+    const getFocusable = () => {
+      const focusableElements = [
+        toggleBtn,
+        ...Array.from(
+          menuEl.querySelectorAll(
+            'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+          ),
+        ),
+      ].filter((el) => el && el.offsetParent !== null)
+      return focusableElements
+    }
+
+    const handleTabKey = (e) => {
+      if (e.key !== "Tab") return
+
+      const focusable = getFocusable()
+      if (focusable.length === 0) return
+
+      const firstElement = focusable[0]
+      const lastElement = focusable[focusable.length - 1]
+
+      if (e.shiftKey) {
+        if (document.activeElement === firstElement) {
+          e.preventDefault()
+          lastElement.focus()
+        }
+      } else {
+        if (document.activeElement === lastElement) {
+          e.preventDefault()
+          firstElement.focus()
+        }
+      }
+    }
+
+    window.addEventListener("keydown", handleTabKey)
+    return () => window.removeEventListener("keydown", handleTabKey)
+  }, [open])
+
+  // Auto-close when clicking outside the menu and toggle button
+  useEffect(() => {
+    if (!open) return
+
+    const handleClickOutside = (e) => {
+      if (
+        menuRef.current &&
+        !menuRef.current.contains(e.target) &&
+        toggleButtonRef.current &&
+        !toggleButtonRef.current.contains(e.target)
+      ) {
+        setOpen(false)
+      }
+    }
+
+    const timer = setTimeout(() => {
+      document.addEventListener("click", handleClickOutside)
+    }, 0)
+
+    return () => {
+      clearTimeout(timer)
+      document.removeEventListener("click", handleClickOutside)
+    }
   }, [open])
 
   // Active section scrollspy observer
-
   useEffect(() => {
     const handleScroll = () => {
       const scrollPos = window.scrollY + 140
-
       const sectionIds = navItems.map(([, id]) => id)
 
       for (let i = sectionIds.length - 1; i >= 0; i--) {
         const el = document.getElementById(sectionIds[i])
-
         if (el && el.offsetTop <= scrollPos) {
           setActiveSection(sectionIds[i])
-
           break
         }
       }
     }
 
     window.addEventListener("scroll", handleScroll, { passive: true })
-
     handleScroll()
-
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
 
   const handleNavClick = (id) => {
     setOpen(false)
-
     const el = document.getElementById(id)
-
     if (el) {
       el.scrollIntoView({ behavior: "smooth" })
     }
   }
 
   return (
-    <header className="navbar">
-      <div className="container navbar__inner">
-        <Logo />
-        <nav className="desktop-nav" aria-label="Primary navigation">
-          {navItems.map(([label, id]) => (
+    <>
+      <header className={`navbar ${open ? "navbar--menu-open" : ""}`}>
+        <div className="container navbar__inner">
+          <Logo />
+          <nav className="desktop-nav" aria-label="Primary navigation">
+            {navItems.map(([label, id]) => (
+              <a
+                key={id}
+                href={`#${id}`}
+                className={activeSection === id ? "active" : ""}
+                onClick={(e) => {
+                  e.preventDefault()
+                  handleNavClick(id)
+                }}
+              >
+                {label}
+              </a>
+            ))}
+          </nav>
+          <div className="navbar__actions">
             <a
-              key={id}
-              href={`#${id}`}
-              className={activeSection === id ? "active" : ""}
-              onClick={(e) => {
-                e.preventDefault()
-
-                handleNavClick(id)
-              }}
-            >
-              {label}
-            </a>
-          ))}
-        </nav>
-        <div className="navbar__actions">
-          <a
-            className="navbar__call-btn"
-            href={`tel:${phoneNumber}`}
-            aria-label={`Call salon on ${formattedPhoneNumber}`}
-          >
-            <Phone size={15} />
-            <span>Call Now</span>
-          </a>
-          <ButtonLink href="#appointment" icon={false}>
-            Book Appointment
-          </ButtonLink>
-        </div>
-        <button
-          className="menu-button"
-          onClick={() => setOpen(!open)}
-          aria-expanded={open}
-          aria-label={open ? "Close navigation menu" : "Open navigation menu"}
-        >
-          {open ? <X /> : <Menu />}
-        </button>
-      </div>
-      <div className={`mobile-nav ${open ? "mobile-nav--open" : ""}`}>
-        <nav aria-label="Mobile navigation">
-          {navItems.map(([label, id]) => (
-            <a
-              key={id}
-              href={`#${id}`}
-              className={activeSection === id ? "active" : ""}
-              onClick={(e) => {
-                e.preventDefault()
-
-                handleNavClick(id)
-              }}
-            >
-              {label}
-              <ChevronRight size={18} />
-            </a>
-          ))}
-          <div className="mobile-nav__actions">
-            <a
-              className="navbar__call-btn navbar__call-btn--mobile"
+              className="navbar__call-btn"
               href={`tel:${phoneNumber}`}
-              onClick={() => setOpen(false)}
+              aria-label={`Call salon on ${formattedPhoneNumber}`}
             >
-              <Phone size={16} />
-              <span>Call +91 85509 80432</span>
+              <Phone size={15} />
+              <span>Call Now</span>
             </a>
-            <ButtonLink href="#appointment" onClick={() => setOpen(false)}>
+            <ButtonLink href="#appointment" icon={false}>
               Book Appointment
             </ButtonLink>
           </div>
-        </nav>
-      </div>
-    </header>
+          <button
+            type="button"
+            ref={toggleButtonRef}
+            className={`menu-button ${open ? "menu-button--open" : ""}`}
+            onClick={() => setOpen((prev) => !prev)}
+            aria-expanded={open}
+            aria-controls="mobile-navigation-menu"
+            aria-label={open ? "Close navigation menu" : "Open navigation menu"}
+          >
+            <span className="hamburger-box" aria-hidden="true">
+              <span className="hamburger-line hamburger-line--1" />
+              <span className="hamburger-line hamburger-line--2" />
+              <span className="hamburger-line hamburger-line--3" />
+            </span>
+          </button>
+        </div>
+
+        {/* Mobile Navigation Drawer Panel */}
+        <div
+          id="mobile-navigation-menu"
+          ref={menuRef}
+          className={`mobile-nav ${open ? "mobile-nav--open" : ""}`}
+          aria-hidden={!open}
+          role="region"
+          aria-label="Mobile Navigation Menu"
+        >
+          <div className="container mobile-nav__container">
+            <nav aria-label="Mobile site navigation">
+              <ul className="mobile-nav__list" role="list">
+                {navItems.map(([label, id]) => {
+                  const isActive = activeSection === id
+                  return (
+                    <li key={id} className="mobile-nav__item">
+                      <a
+                        href={`#${id}`}
+                        className={`mobile-nav__link ${isActive ? "active" : ""}`}
+                        aria-current={isActive ? "page" : undefined}
+                        tabIndex={open ? 0 : -1}
+                        onClick={(e) => {
+                          e.preventDefault()
+                          handleNavClick(id)
+                        }}
+                      >
+                        <span className="mobile-nav__label">{label}</span>
+                        <ChevronRight
+                          size={18}
+                          className="mobile-nav__chevron"
+                          aria-hidden="true"
+                        />
+                      </a>
+                    </li>
+                  )
+                })}
+              </ul>
+              <div className="mobile-nav__actions">
+                <a
+                  className="navbar__call-btn navbar__call-btn--mobile"
+                  href={`tel:${phoneNumber}`}
+                  tabIndex={open ? 0 : -1}
+                  onClick={() => setOpen(false)}
+                >
+                  <Phone size={16} aria-hidden="true" />
+                  <span>Call {formattedPhoneNumber}</span>
+                </a>
+                <ButtonLink
+                  href="#appointment"
+                  tabIndex={open ? 0 : -1}
+                  onClick={() => setOpen(false)}
+                >
+                  Book Appointment
+                </ButtonLink>
+              </div>
+            </nav>
+          </div>
+        </div>
+      </header>
+
+      {/* Dimmed backdrop overlay when mobile menu is open */}
+      <div
+        className={`mobile-nav-backdrop ${open ? "mobile-nav-backdrop--open" : ""}`}
+        aria-hidden="true"
+        onClick={() => setOpen(false)}
+      />
+    </>
   )
 }
 
