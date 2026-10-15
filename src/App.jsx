@@ -113,13 +113,15 @@ function ButtonLink({
 
   icon = true,
 
+  className = "",
+
   onClick,
 
   target,
 }) {
   return (
     <a
-      className={`btn btn--${variant}`}
+      className={`btn btn--${variant} ${className}`.trim()}
       href={href}
       onClick={onClick}
       target={target}
@@ -423,9 +425,11 @@ function Hero() {
       <div className="hero__orb hero__orb--two" />
       <div className="container hero__grid">
         <div className="hero__content">
-          <p className="eyebrow eyebrow--left hero__eyebrow-anim">
-            <span />A BEAUTY RITUAL, MADE PERSONAL
-          </p>
+          <div className="hero__eyebrow-pill hero__eyebrow-anim">
+            <span className="hero__eyebrow-dot" />
+            <Sparkles size={12} className="hero__eyebrow-icon" />
+            <span>A BEAUTY RITUAL, MADE PERSONAL</span>
+          </div>
           <h1 className="hero__title-anim">
             Your Beauty,
             <br />
@@ -437,8 +441,14 @@ function Hero() {
             Pune.
           </p>
           <div className="hero__actions hero__actions-anim">
-            <ButtonLink href="#appointment">Book Your Appointment</ButtonLink>
-            <ButtonLink href="#services" variant="outline">
+            <ButtonLink href="#appointment" className="hero__btn-main">
+              Book Appointment
+            </ButtonLink>
+            <ButtonLink
+              href="#services"
+              variant="outline"
+              className="hero__btn-sub"
+            >
               Explore Services
             </ButtonLink>
           </div>
@@ -455,27 +465,57 @@ function Hero() {
               </span>
             </div>
             <div className="hero__trust-text">
-              <strong>Your beauty. Your style.</strong>
-              <small>Your confidence.</small>
+              <div className="hero__trust-rating">
+                <span className="hero__stars" aria-hidden="true">
+                  ★★★★★
+                </span>
+                <strong>4.9 Rating</strong>
+              </div>
+              <small>Trusted by 500+ happy clients in Pune</small>
             </div>
+          </div>
+
+          {/* Quick-Service category tags for mobile visitors */}
+          <div className="hero__quick-nav" aria-label="Popular services">
+            <a href="#services" className="hero__quick-tag">
+              <Scissors size={13} />
+              <span>Haircut &amp; Styling</span>
+            </a>
+            <a href="#services" className="hero__quick-tag">
+              <Sparkles size={13} />
+              <span>Skin Rituals</span>
+            </a>
+            <a href="#services" className="hero__quick-tag">
+              <Heart size={13} />
+              <span>Bridal Makeup</span>
+            </a>
+            <a href="#services" className="hero__quick-tag">
+              <Flower2 size={13} />
+              <span>Hair Spa</span>
+            </a>
           </div>
         </div>
         <div className="hero__visual">
           <div className="hero__image-wrap">
             <img
               src={heroImage}
-              alt="Stock photo of a professional hair styling appointment"
+              alt="Professional hair styling and beauty appointment at Mangesha'z Salon"
+              fetchPriority="high"
             />
-            <span className="stock-label">Editorial stock photography</span>
             <div className="hero__image-glare" aria-hidden="true" />
-          </div>
-          <div className="hero__note">
-            <span className="hero__note-icon">
-              <Sparkles />
-            </span>
-            <div>
-              <strong>Personalized care</strong>
-              <small>Designed around you</small>
+            <div className="hero__floating-chip">
+              <span className="hero__chip-pulse" />
+              <Sparkles size={12} />
+              <span>Pimple Saudagar, Pune</span>
+            </div>
+            <div className="hero__note">
+              <span className="hero__note-icon">
+                <Sparkles />
+              </span>
+              <div>
+                <strong>Personalized Care</strong>
+                <small>Tailored rituals designed for you</small>
+              </div>
             </div>
           </div>
           <div className="hero__flower">
@@ -485,18 +525,33 @@ function Hero() {
       </div>
       <div className="hero__bottom">
         <div className="container hero__features">
-          <span>
-            <Sparkles />
-            Personalized services
-          </span>
-          <span>
-            <MapPin />
-            Pimple Saudagar, Pune
-          </span>
-          <span>
-            <MessageCircle />
-            Easy WhatsApp enquiries
-          </span>
+          <div className="hero__feature-item">
+            <span className="hero__feature-icon">
+              <Sparkles />
+            </span>
+            <div className="hero__feature-info">
+              <strong>Personalized Care</strong>
+              <small>Tailored to your preference</small>
+            </div>
+          </div>
+          <div className="hero__feature-item">
+            <span className="hero__feature-icon">
+              <MapPin />
+            </span>
+            <div className="hero__feature-info">
+              <strong>Pimple Saudagar</strong>
+              <small>Near Shivar Chowk, Pune</small>
+            </div>
+          </div>
+          <div className="hero__feature-item">
+            <span className="hero__feature-icon">
+              <MessageCircle />
+            </span>
+            <div className="hero__feature-info">
+              <strong>Instant WhatsApp</strong>
+              <small>Quick replies &amp; booking</small>
+            </div>
+          </div>
         </div>
       </div>
     </section>
